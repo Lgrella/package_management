@@ -14,3 +14,12 @@ class Model(ABC):
     @abstractmethod
     def predict(self, data):
         pass
+    
+    @abstractmethod
+    def loss(self, data, targets):
+        pass
+
+class SGDModel(Model):
+    @abstractmethod
+    def grad(self, data):
+        pass

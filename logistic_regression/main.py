@@ -1,8 +1,8 @@
 ### IMPORTS
 import pandas as pd
-from core.main import Model
+from core.main import SGDModel
 ###
 
-class LogisticRegression(Model):
+class LogisticRegression(SGDModel):
     def __init__(self, params):
         super().__init__(params)
