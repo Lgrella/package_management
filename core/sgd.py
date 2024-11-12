@@ -1,5 +1,6 @@
 ### IMPORTS
 import pandas as pd
+import pyspark as ps
 ###
 
 class SGD:
@@ -8,4 +9,7 @@ class SGD:
         self.lr = lr
 
     def step(self, grad):
-        self.params -= self.lr*grad
+        for item in self.params:
+            if item not in grad:
+                raise Exception("Developer did something wrong, you need a timeout")
+            self.params[item] -= self.lr*grad[item]

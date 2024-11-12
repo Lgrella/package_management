@@ -1,11 +1,13 @@
 ### IMPORTS
-import pandas as pd
+import pyspark.pandas as pd
 from abc import ABC, abstractmethod
 ###
 
 class Model(ABC):
-    def __init__(self, params):
-        self.params = params
+    def __init__(self, context):
+        self.sc = context
+        # Initialize parameters
+        pass
 
     @abstractmethod
     def train(self, data):
@@ -21,5 +23,5 @@ class Model(ABC):
 
 class SGDModel(Model):
     @abstractmethod
-    def grad(self, data):
+    def grad(self, data, targets):
         pass
