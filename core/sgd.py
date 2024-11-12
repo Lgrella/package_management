@@ -11,5 +11,5 @@ class SGD:
     def step(self, grad):
         for item in self.params:
             if item not in grad:
-                raise Exception("Developer did something wrong, you need a timeout")
+                raise Exception("Bad thing happened")
             self.params[item] -= self.lr*grad[item]
