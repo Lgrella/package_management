@@ -1,16 +1,24 @@
 ### IMPORTS
-import pandas as pd
 from core.main import Model
+from pyspark.sql import SparkSession
+from pyspark import SparkContext
 ###
 
-# gini index of a subset of data
-def gini(data):
-    target = data.map(lambda x: x[-1])
-    total = target.count()
-    counts = target.countByValue()
+#CONFUSED: 
 
+#REVIEW: Check over entire thing and make sure there's no overlapping spark contexts
+
+def gini(data):
+    
+    #TODO: Need to rewrite this since data is now an rdd
+    # print(data.take(5))
+    
+    # target = data.map(lambda row: row[-1])
+    total = data.count()
+    counts = data.countByValue()
+    
     # sum of p squared
-    p_squareds = counts.map(lambda x: (x[1] / total) ** 2).reduce(lambda x, y: x + y)
+    p_squareds = sum((count / total) ** 2 for count in counts.values())
     return 1 - p_squareds
 
 # add y as the last column of X
@@ -61,10 +69,11 @@ class DecisionTree(Model):
     def __init__(self, params):
         super().__init__(params)
         self.head = None
+        self.max_depth = params["max_depth"]
 
     @staticmethod
     def optimal_node_for_feature(data, feature):
-        feature_values = data[feature].unique()
+        feature_values = data.map(lambda row: row[feature]).distinct().collect()
         best_node = None
         best_gini = 1
 
@@ -72,22 +81,37 @@ class DecisionTree(Model):
         for threshold in feature_values:
             node = TreeNode(feature, threshold)
             preds = node.predict(data)
+            
+            print("Preds:", preds.take(5))
+            
+            giniVal = gini(preds)
+            node.gini = giniVal
+            print(node.gini)
 
-            gini = gini(preds)
-            node.gini = gini
-
-            if gini < best_gini:
-                best_gini = gini
+            if giniVal < best_gini:
+                best_gini = giniVal
                 best_node = node
 
             return best_node
     
     @staticmethod
     def optimal_node(data, features):
+        
+        #TODO: Persist the data here
+        
         best_gini = 1
         best_node = None
-
-        # compute the best node for every feature, select the best overall
+        
+        if not features:
+            return None
+        
+        print("features:", features)
+        
+        # results = features.map(lambda x: DecisionTree.optimal_node_for_feature(data, x)).collect()
+        # best_node = min(results, key=lambda node: node.gini)
+        # best_gini = best_node.gini
+        
+        #compute the best node for every feature, select the best overall
         for feature in features:
             node = DecisionTree.optimal_node_for_feature(data, feature)
             if node.gini < best_gini:
@@ -98,8 +122,8 @@ class DecisionTree(Model):
         data_and_preds = add_column(data, preds)
 
         # keep track of the datapoints that get split left and right based on the best split    
-        node.left_datapoints = remove_last_column(data_and_preds.filter(lambda x: not x[-1])) #get rid of preds column before saving
-        node.right_datapoints = remove_last_column(data_and_preds.filter(lambda x: x[-1]))
+        best_node.left_datapoints = remove_last_column(data_and_preds.filter(lambda x: not x[-1])) #get rid of preds column before saving
+        best_node.right_datapoints = remove_last_column(data_and_preds.filter(lambda x: x[-1]))
 
         return best_node
     
@@ -108,10 +132,18 @@ class DecisionTree(Model):
         if depth > self.max_depth:
             return None
         
+        if not features:
+            return None
+        
         # calculate the optimal split based on remaining features
         curr = DecisionTree.optimal_node(data, features)
+        
+        if not curr:
+          return None 
 
-        leftover_features = features.filter(lambda x: x != curr.feature) #remove feature we just used from pool
+        #filter(lambda x: x != curr.feature, features) 
+        leftover_features =  [feature for feature in features if feature != curr.feature]
+        #remove feature we just used from pool
 
         # recursively build left and right children
         curr.left = self.recursive_fit(curr.left_datapoints, leftover_features, depth + 1)
@@ -119,10 +151,38 @@ class DecisionTree(Model):
 
         return curr
 
-    def fit(self, data):
-        features = range(len(data.first()))
-        self.head = self.recursive_fit(data, features, depth=0)
-        return
+    def train(self, data):
+        
+        
+        #TODO: Make sure data is an RDD + persist!
+        spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
+        spark_df = spark.createDataFrame(data)
+        rdd = spark_df.rdd
+        rdd.persist()
+        
+        print(rdd.take(5))
+        
+        
+        #TODO: Convert features to RDD.
+        #CONFUSED: Not rlly sure how this works in the rest of the code
+        # features = [field.name for field in spark_df.schema[:-1]]
+        # features = spark.sparkContext.parallelize(features)
+        
+        features = range(len(rdd.first()) - 1)
+        
+
+        self.head = self.recursive_fit(rdd, features, depth=0)
+        
+        return self.head
 
     def predict(self, data):
+        
+        # #TODO: Make sure data is an RDD
+        # sc4 = SparkContext("Converting prediction data to an RDD")
+        # parallelizedData = sc4.parallelize(data)
+        # sc4.stop()
+        
         return self.head.recursive_pred(data)
+    
+    def loss(self):
+        return 0
