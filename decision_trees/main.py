@@ -182,7 +182,14 @@ class DecisionTree(Model):
         # parallelizedData = sc4.parallelize(data)
         # sc4.stop()
         
-        return self.head.recursive_pred(data)
+        spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
+        spark_df = spark.createDataFrame(data)
+        rdd = spark_df.rdd
+        rdd.persist()
+        
+        print(rdd.take(5))
+        
+        return self.head.recursive_pred(rdd)
     
     def loss(self):
         return 0
