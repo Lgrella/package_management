@@ -50,6 +50,8 @@ class TreeNode():
     # split the data based on threshold, then pass datapoints to children
     def recursive_pred(self, X):
         my_preds = self.predict(X)
+        
+        # print("I hATE THIS:", type(my_preds))
         if self.left is None and self.right is None:
             return my_preds
         
@@ -171,7 +173,7 @@ class DecisionTree(Model):
         features = range(len(rdd.first()) - 1)
         
 
-        self.head = self.recursive_fit(rdd, features, depth=0)
+        self.head = self.recursive_fit(rdd, features, depth=1)
         
         return self.head
 
@@ -187,7 +189,7 @@ class DecisionTree(Model):
         rdd = spark_df.rdd
         rdd.persist()
         
-        print(rdd.take(5))
+        # print(rdd.take(5))
         
         return self.head.recursive_pred(rdd)
     
