@@ -8,29 +8,43 @@ from pyspark import SparkContext
 
 #REVIEW: Check over entire thing and make sure there's no overlapping spark contexts
 
+# when converting dataframes to RDDs, the row structure is preserved
+# ex: Row(A=1, B=2)
+# this function converts it to have tuples as rows
+# ex: Row(A=1, B=2) => (1, 2)
+def row_to_tuple(data):
+    return data.map(lambda row: tuple(row))
+
 def to_rdd(data):
     spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
     spark_df = spark.createDataFrame(data)
     rdd = spark_df.rdd
     rdd.persist()
 
-    return rdd
+    return row_to_tuple(rdd)
 
 def gini(data):
-    
+    gini = 0
+    total = data.count()
     #TODO: Need to rewrite this since data is now an rdd
     # print(data.take(5))
     
     # target = data.map(lambda row: row[-1])
-    total = data.count()
-    counts = data.countByValue()
+    for category in [0, 1]:
+        split = data.filter(lambda x: x[-1] == category)
+        size = split.count()
+        counts = data.countByValue()
+        
+        # sum of p squared
+        p_squareds = sum((count / size) ** 2 for count in counts.values())
     
-    # sum of p squared
-    p_squareds = sum((count / total) ** 2 for count in counts.values())
-    return 1 - p_squareds
+        gini += (1 - p_squareds) * (size / total)
+
+    return gini
 
 # add y as the last column of X
 def add_column(X, y):
+    breakpoint()
     return X.zip(y).map(lambda x: x[0] + (x[1],))
 
 def remove_last_column(X):
@@ -89,10 +103,12 @@ class DecisionTree(Model):
         for threshold in feature_values:
             node = TreeNode(feature, threshold)
             preds = node.predict(data)
+
+            data_with_preds = add_column(data, preds)
             
             #print("Preds:", preds.take(5))
             
-            giniVal = gini(preds)
+            giniVal = gini(data_with_preds)
             node.gini = giniVal
             #print(node.gini)
 
@@ -160,20 +176,15 @@ class DecisionTree(Model):
         return curr
 
     def train(self, data):
-        
-        
-        #TODO: Make sure data is an RDD + persist!
         rdd = to_rdd(data)
+        rdd = remove_last_column(rdd)
         
-        
-        #TODO: Convert features to RDD.
         #CONFUSED: Not rlly sure how this works in the rest of the code
         # features = [field.name for field in spark_df.schema[:-1]]
         # features = spark.sparkContext.parallelize(features)
         
         features = range(len(rdd.first()) - 1)
-
-        self.head = self.recursive_fit(rdd, features, depth=0)
+        self.head = self.recursive_fit(rdd, features, depth=1)
         
         return self.head
 
