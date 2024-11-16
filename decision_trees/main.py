@@ -8,6 +8,14 @@ from pyspark import SparkContext
 
 #REVIEW: Check over entire thing and make sure there's no overlapping spark contexts
 
+def to_rdd(data):
+    spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
+    spark_df = spark.createDataFrame(data)
+    rdd = spark_df.rdd
+    rdd.persist()
+
+    return rdd
+
 def gini(data):
     
     #TODO: Need to rewrite this since data is now an rdd
@@ -82,11 +90,11 @@ class DecisionTree(Model):
             node = TreeNode(feature, threshold)
             preds = node.predict(data)
             
-            print("Preds:", preds.take(5))
+            #print("Preds:", preds.take(5))
             
             giniVal = gini(preds)
             node.gini = giniVal
-            print(node.gini)
+            #print(node.gini)
 
             if giniVal < best_gini:
                 best_gini = giniVal
@@ -105,7 +113,7 @@ class DecisionTree(Model):
         if not features:
             return None
         
-        print("features:", features)
+        #print("features:", features)
         
         # results = features.map(lambda x: DecisionTree.optimal_node_for_feature(data, x)).collect()
         # best_node = min(results, key=lambda node: node.gini)
@@ -155,12 +163,7 @@ class DecisionTree(Model):
         
         
         #TODO: Make sure data is an RDD + persist!
-        spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
-        spark_df = spark.createDataFrame(data)
-        rdd = spark_df.rdd
-        rdd.persist()
-        
-        print(rdd.take(5))
+        rdd = to_rdd(data)
         
         
         #TODO: Convert features to RDD.
@@ -169,25 +172,13 @@ class DecisionTree(Model):
         # features = spark.sparkContext.parallelize(features)
         
         features = range(len(rdd.first()) - 1)
-        
 
         self.head = self.recursive_fit(rdd, features, depth=0)
         
         return self.head
 
     def predict(self, data):
-        
-        # #TODO: Make sure data is an RDD
-        # sc4 = SparkContext("Converting prediction data to an RDD")
-        # parallelizedData = sc4.parallelize(data)
-        # sc4.stop()
-        
-        spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
-        spark_df = spark.createDataFrame(data)
-        rdd = spark_df.rdd
-        rdd.persist()
-        
-        print(rdd.take(5))
+        rdd = to_rdd(data)
         
         return self.head.recursive_pred(rdd)
     
