@@ -9,7 +9,8 @@ from decision_trees.main import DecisionTree
 # spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
 # sc = SparkContext.getOrCreate()
 
-max_depth = 1
+max_depth = 2
+n_thresholds = 3
 
 # TODO: convert diabetes data to X and y
 df = pd.read_csv('data/diabetes.csv') 
@@ -23,7 +24,7 @@ skModel.fit(X, y)
 skPredictions = skModel.predict(X)
 
 #Spark Tree Model
-params = {'max_depth': max_depth}  # Define additional parameters if needed
+params = {'max_depth': max_depth, 'n_thresholds': n_thresholds}  # Define additional parameters if needed
 sparkItModel = DecisionTree(params)
 sparkItModel.train(df)
 print("Training worked!")
