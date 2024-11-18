@@ -52,5 +52,6 @@ class LinearRegression(SGDModel):
         print("Training complete.")
 
     def train_batch(self, batch):
+        official_batch_size = batch.count()
         grad = batch.map(self.grad).reduce(lambda x, y: (x[0] + y[0], x[1] + y[1]))
-        self.sgd.step({"W": grad[0] / self.batch_size, "b": grad[1] / self.batch_size})
+        self.sgd.step({"W": grad[0] / official_batch_size, "b": grad[1] / official_batch_size})
