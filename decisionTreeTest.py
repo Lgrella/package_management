@@ -9,8 +9,8 @@ from decision_trees.main import DecisionTree
 # spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
 # sc = SparkContext.getOrCreate()
 
-max_depth = 2
-n_thresholds = 3
+max_depth = 1
+n_thresholds = 
 
 # TODO: convert diabetes data to X and y
 df = pd.read_csv('data/diabetes.csv') 
@@ -35,5 +35,6 @@ sparkItPredictionsArray = np.array(sparkItPredictions)
 sparkItAccuracy = accuracy_score(y, sparkItPredictions)
 skAccuracy = accuracy_score(y, skPredictions)
 
+#print(sparkItPredictions)
 print(f"SparkIt Model Accuracy: {sparkItAccuracy}")
 print(f"Sklearn Model Accuracy: {skAccuracy}")
