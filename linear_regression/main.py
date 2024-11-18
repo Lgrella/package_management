@@ -16,9 +16,8 @@ class LinearRegression(SGDModel):
     def loss(self, data: Union[Point, RDD[Point]]):
         if isinstance(data, RDD):
             count = data.count()
-            batches = data.randomSplit([self.batch_size] * (count // self.batch_size))
-            losses = [batch.map(self.grad).sum() / batch.count() for batch in batches]
-            return sum(losses) / len(losses)
+            losses = data.map(self.loss).reduce(lambda x, y: (x[0]+y[0], x[1]+y[1]))
+            return losses[0]/count
         preds = self.predict(data)
         return 0.5 * (preds - data.labels) ** 2
 
