@@ -27,7 +27,7 @@ if __name__ == "__main__":
     #NOTE: Swiss Roll Data for Mapping Purposes
     start = time.time()
     # load swiss roll dataset
-    n_samples = 5000 # please change accordingly
+    n_samples = 10000 # please change accordingly
     noise = 0.05
 
     np.random.seed(2024) # use random seed
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     # plot the data colored by class labels
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(131, projection='3d')
-    ax.scatter(X[:, 0], X[:, 1], X[:,2], c= y, cmap='jet')
-    ax.set_title("data in 3D")
+    ax.scatter(X[:, 0], X[:, 1], X[:,2], c= y, cmap='RdPu')
+    ax.set_title("Initial Data in 3D")
     ax.set_xlabel('x');  ax.set_ylabel('y'); ax.set_zlabel('z'); 
     ax.view_init(20, 70)
     
@@ -55,8 +55,8 @@ if __name__ == "__main__":
 
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(131)
-    ax.scatter(pca_results[:, 0], pca_results[:, 1], c= y, cmap='jet')
-    ax.set_title("Data in 2D (PCA 1000 Samples)")
+    ax.scatter(pca_results[:, 0], pca_results[:, 1], c= y, cmap='RdPu')
+    ax.set_title("SKLearn Results in 2D (PCA 10000 Samples)")
     ax.set_xlabel('x') 
     ax.set_ylabel('y')
     plt.show()
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(131)
-    ax.scatter(spark_transformed_data[:, 0], spark_transformed_data[:, 1], c= y, cmap='jet')
-    ax.set_title("SparkIt Results in 2D (PCA 1000 Samples)")
+    ax.scatter(spark_transformed_data[:, 0], spark_transformed_data[:, 1], c= y, cmap='RdPu')
+    ax.set_title("SparkIt Results in 2D (PCA 10000 Samples)")
     ax.set_xlabel('x') 
     ax.set_ylabel('y')
     plt.show()
