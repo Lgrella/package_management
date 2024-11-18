@@ -8,9 +8,10 @@ from core.point import Point
 from typing import Union
 ###
 class LinearRegression(SGDModel):
-    def __init__(self, w_shape, b_shape, batch_size=32):
+    def __init__(self, w_shape, b_shape, batch_size=32, lr=0.01):
         self.params = {"W": [0.0] * w_shape[0], "b": 0.0}  # Initialize b as a scalar
         self.batch_size = batch_size
+        self.sgd = SGD(self.params, lr)
 
     def loss(self, data: Union[Point, RDD[Point]]):
         if isinstance(data, RDD):
@@ -21,43 +22,35 @@ class LinearRegression(SGDModel):
         preds = self.predict(data)
         return 0.5 * (preds - data.labels) ** 2
 
-    def predict(self, data):
-        W = self.params["W"]
-        b = self.params["b"]
+    def predict(self, data: Union[Point, RDD[Point]]):
+            W = self.params["W"]
+            b = self.params["b"]
+            if isinstance(data, RDD):
+                return data.map(self.predict)
+            else:
+                return np.matmul(W, data.data) + b
+
+    def grad(self, data: Union[Point, RDD[Point]]):
         if isinstance(data, RDD):
-            return data.map(lambda point: sum(w * x for w, x in zip(W, point.data)) + b)
-        else:
-            return sum(w * x for w, x in zip(W, data.data)) + b
+            count = data.count()
+            grads = data.map(self.grad).reduce(lambda x, y: (x[0]+y[0], x[1]+y[1]))
+            return grads[0]/count, grads[1]/count
+        preds = self.predict(data)
+        diff = preds-data.label
+        return np.multiply(diff, data.data), diff
 
+    def train(self, data, num_epochs):
 
-    def grad(self, point):
-        W = self.params["W"]
-        b = self.params["b"]
-        prediction = self.predict(point)
-        diff = prediction - point.label
-        grad_W = [diff * x for x in point.data]
-        grad_b = diff
-        return grad_W, grad_b
-
-    def train(self, data, num_epochs, lr):
         for epoch in range(num_epochs):
             data = data.sample(False, 1.0).cache()  # Shuffle the data
             num_batches = data.count() // self.batch_size
-
-            # Split the data into batches
+            # Split the data into batches as RDDs
             batches = data.randomSplit([1.0 / num_batches] * num_batches)
-
-            for i in range(num_batches):
-                batch = batches[i]  # Access the i-th batch
-
-                # Aggregate gradients across the batch
-                grads = batch.map(self.grad).reduce(lambda g1, g2: (
-                    [g1_w + g2_w for g1_w, g2_w in zip(g1[0], g2[0])],
-                    g1[1] + g2[1]
-                ))
-
-                grad_W, grad_b = grads
-                self.params["W"] = [w - lr * g / self.batch_size for w, g in zip(self.params["W"], grad_W)]
-                self.params["b"] -= lr * grad_b / self.batch_size
+            for batch in batches:
+                self.train_batch(batch)
 
         print("Training complete.")
+
+    def train_batch(self, batch):
+        grad = batch.map(self.grad).reduce(lambda x, y: (x[0] + y[0], x[1] + y[1]))
+        self.sgd.step({"W": grad[0] / self.batch_size, "b": grad[1] / self.batch_size})
