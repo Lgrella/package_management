@@ -37,22 +37,20 @@ To install the project, follow these steps:
 Here is a simple example of how to use the library:
 
 ```python
-from sparkit.linear_model import LinearRegression
-from sparkit.utils import SparkSessionBuilder
-
-# Initialize Spark session
+# Create a Spark session
 spark = SparkSessionBuilder().get_session()
 
 # Load your data
-data = spark.read.csv('data.csv', header=True, inferSchema=True)
+data = spark.read.csv('/workspaces/sparkit/data/diabetes.csv', header=True, inferSchema=True)
 
-# Initialize and train the model
-model = LinearRegression()
-model.fit(data)
+data_rdd = preprocess_data(data)
 
-# Make predictions
-predictions = model.predict(data)
-predictions.show()
+training_rdd, test_rdd = data_rdd.randomSplit([0.8, 0.2])
+
+# Initialize and train LinearRegression model
+model = LinearRegression(w_shape=(len(training_rdd.first().data),), batch_size = 32, b_shape=(1,), lr=0.01)
+model.train(training_rdd, num_epochs=10)
+
 ```
 
 ## License
