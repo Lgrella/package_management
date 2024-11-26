@@ -6,6 +6,7 @@ from sklearn.datasets import make_swiss_roll
 from pyspark.sql import SparkSession
 import numpy as np
 from sklearn.manifold import MDS, Isomap
+from pyspark import SparkContext
 
 df = pd.read_csv('data/diabetes.csv') 
 #print(df.head)
@@ -34,41 +35,35 @@ if __name__ == "__main__":
     ax.view_init(20, 70)
     
     
-    #NOTE: Plotting the sklearn dimension reduction mapping
-    # Creating Isompa Representation 
-    embedding = Isomap(n_neighbors=10)
-    X_new = embedding.fit_transform(X)
+    # #NOTE: Plotting the sklearn version of dimension reduction mapping with IsoMap 
+    # # Creating IsoMap Representation 
+    # embedding = Isomap(n_neighbors=10)
+    # X_new = embedding.fit_transform(X)
     
+    # # plot the data colored by class labels
+    # fig = plt.figure(figsize=(12, 4))
+    # ax = fig.add_subplot(131)
+    # ax.scatter(X_new[:, 0], X_new[:, 1], c= y, cmap='RdPu')
+    # ax.set_title("data in 2D with Isomap (10 neighbors)")
+    # ax.set_xlabel('x') 
+    # ax.set_ylabel('y')
+    # plt.show()
+    
+    #NOTE: Plotting the Sparkit version of dimension reduction mapping with IsoMap 
+    # Creating IsoMap Representation 
+    sc = SparkContext.getOrCreate()
+    X_new = sc.parallelize(enumerate(X)) 
+    embedding = SparkIsomap(X_new, k=10, n_components=10)
+
     # plot the data colored by class labels
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(131)
-    ax.scatter(X_new[:, 0], X_new[:, 1], c= y, cmap='RdPu')
-    ax.set_title("data in 2D with Isomap (10 neighbors)")
+    ax.scatter((embedding[:, 0] * -1), embedding[:, 1], c= y, cmap='RdPu')
+    ax.set_title("data in 2D with SparkIt (10 neighbors)")
     ax.set_xlabel('x') 
     ax.set_ylabel('y')
     plt.show()
     
     
-    # #NOTE: Initialize Spark session
-    # spark = SparkSession.builder.appName("SparkPCATest").getOrCreate()
-    # sc = spark.sparkContext
-    # rdd = sc.parallelize(X.tolist()) 
-
-    # #NOTE: SparkIt PCA
-    # spark_pca = SparkPCA(n_components=2)
-    # spark_pca.fit(rdd)
-    # spark_transformed_rdd = spark_pca.transform(rdd)
-    # spark_transformed_data = np.array(spark_transformed_rdd.collect()) 
-    
-    # # print("SparkPCA Components:")
-    # # print(spark_transformed_data.components)
-    
-    # fig = plt.figure(figsize=(12, 4))
-    # ax = fig.add_subplot(131)
-    # ax.scatter(spark_transformed_data[:, 0], spark_transformed_data[:, 1], c= y, cmap='RdPu')
-    # ax.set_title("SparkIt Results in 2D (PCA 10000 Samples)")
-    # ax.set_xlabel('x') 
-    # ax.set_ylabel('y')
-    # plt.show()
     
     

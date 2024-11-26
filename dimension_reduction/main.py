@@ -11,6 +11,8 @@ class SparkPCA:
         """
         Compute the principal components and explained variance from the RDD.
         """
+        rdd.persist()
+        
         stats = rdd.map(lambda x: (np.array(x), np.array(x) ** 2)) \
                    .reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]))
                    
@@ -37,6 +39,8 @@ class SparkPCA:
         """
         Project the data onto the principal components.
         """
+        rdd.persist()
+        
         standardized_rdd = rdd.map(lambda x: (np.array(x) - self.mean) / self.scale)
         projected_rdd = standardized_rdd.map(lambda x: np.dot(x, self.components.T))
         return projected_rdd

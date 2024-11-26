@@ -26,18 +26,12 @@ if __name__ == "__main__":
     
     #NOTE: Swiss Roll Data for Mapping Purposes
     start = time.time()
-    # load swiss roll dataset
     n_samples = 10000 # please change accordingly
     noise = 0.05
-
     np.random.seed(2024) # use random seed
-
     X, y = make_swiss_roll(n_samples, noise=noise)
     end = time.time()
     print("Load and process data:", end - start, "seconds")
-
-
-    # plot the data colored by class labels
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(131, projection='3d')
     ax.scatter(X[:, 0], X[:, 1], X[:,2], c= y, cmap='RdPu')
@@ -78,7 +72,7 @@ if __name__ == "__main__":
     
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(131)
-    ax.scatter(spark_transformed_data[:, 0], spark_transformed_data[:, 1], c= y, cmap='RdPu')
+    ax.scatter(spark_transformed_data[:, 0] *50, spark_transformed_data[:, 1] *50, c= y, cmap='RdPu')
     ax.set_title("SparkIt Results in 2D (PCA 10000 Samples)")
     ax.set_xlabel('x') 
     ax.set_ylabel('y')
