@@ -35,19 +35,19 @@ if __name__ == "__main__":
     ax.view_init(20, 70)
     
     
-    # #NOTE: Plotting the sklearn version of dimension reduction mapping with IsoMap 
-    # # Creating IsoMap Representation 
-    # embedding = Isomap(n_neighbors=10)
-    # X_new = embedding.fit_transform(X)
+    #NOTE: Plotting the sklearn version of dimension reduction mapping with IsoMap 
+    # Creating IsoMap Representation 
+    embedding = Isomap(n_neighbors=10)
+    X_new = embedding.fit_transform(X)
     
-    # # plot the data colored by class labels
-    # fig = plt.figure(figsize=(12, 4))
-    # ax = fig.add_subplot(131)
-    # ax.scatter(X_new[:, 0], X_new[:, 1], c= y, cmap='RdPu')
-    # ax.set_title("data in 2D with Isomap (10 neighbors)")
-    # ax.set_xlabel('x') 
-    # ax.set_ylabel('y')
-    # plt.show()
+    # plot the data colored by class labels
+    fig = plt.figure(figsize=(12, 4))
+    ax = fig.add_subplot(131)
+    ax.scatter(X_new[:, 0], X_new[:, 1], c= y, cmap='RdPu')
+    ax.set_title("data in 2D with Isomap (10 neighbors)")
+    ax.set_xlabel('x') 
+    ax.set_ylabel('y')
+    plt.show()
     
     #NOTE: Plotting the Sparkit version of dimension reduction mapping with IsoMap 
     # Creating IsoMap Representation 
