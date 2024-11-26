@@ -58,10 +58,12 @@ class DecisionTree(Model):
         return gini
 
     def recursive_fit(self, data: RDD, features: list, depth: int):
-        if depth > self.max_depth or len(features) == 0:
+        if depth > self.max_depth or len(features) == 0 or not data:
             return None  # Return None for leaf nodes
         
         best_gini = float('inf')
+        best_left = None
+        best_right = None
         best_node = None
         feature_progress = tqdm(total=len(features), desc=f"Depth {depth}", position=0, leave=True)
 
@@ -99,7 +101,8 @@ class DecisionTree(Model):
                 if gini_split < best_gini:
                     #print(f"updating best node with gini of {gini_split} from {best_gini}")
                     best_gini = gini_split
-
+                    best_left = left
+                    best_right = right
                     best_node = TreeNode(feature=feature, threshold=threshold, gini=gini_split, left=None, right=None, flip=False)
 
                     correct = data.filter(lambda row: best_node.predict(row) == row[-1]).count()
@@ -114,9 +117,13 @@ class DecisionTree(Model):
             threshold_progress.close()
             feature_progress.update(1)
 
+        if not best_node:
+            best_node = TreeNode(feature=feature, threshold=0, gini=1, left=None, right=None, flip=False)
+
         leftover_features =  [f for f in features if f != best_node.feature]
-        best_node.left = self.recursive_fit(left, leftover_features, depth + 1)
-        best_node.right = self.recursive_fit(right, leftover_features, depth + 1)
+
+        best_node.left = self.recursive_fit(best_left, leftover_features, depth + 1)
+        best_node.right = self.recursive_fit(best_right, leftover_features, depth + 1)
 
         return best_node
 
