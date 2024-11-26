@@ -10,8 +10,8 @@ from sklearn.model_selection import train_test_split
 # spark = SparkSession.builder.appName("DecisionTreeTest").getOrCreate()
 # sc = SparkContext.getOrCreate()
 
-max_depth = 2
-n_thresholds = 50
+max_depth = 1
+n_thresholds = 5
 
 # TODO: convert diabetes data to X and y
 df = pd.read_csv('data/diabetes.csv') 
