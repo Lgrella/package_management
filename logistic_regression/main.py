@@ -19,7 +19,7 @@ class LogisticRegression(SGDModel):
             losses = data.map(self.loss).reduce(lambda x, y: (x[0]+y[0], x[1]+y[1]))
             return losses[0]/count
         preds = self.predict(data)
-        return np.multiply(data.labels, np.log(preds)) + np.multiply(1-data.labels, 1-np.log(preds))
+        return np.multiply(data.labels, np.log(preds)) + np.multiply(1-data.labels, np.log(1-preds))
 
     def predict(self, data: Union[Point, RDD[Point]]):
             W = self.params["W"]
@@ -27,10 +27,10 @@ class LogisticRegression(SGDModel):
             if isinstance(data, RDD):
                 return data.map(self.predict)
             else:
-                return np.clip(self.sigmoid(np.matmul(W, data.data) + b), a_min=1e-7, a_max=1-1e-7)
+                return self.sigmoid(np.matmul(W, data.data) + b)
             
     def sigmoid(self, value):
-        return 1/(1+np.exp(value))
+        return 1.0 / (1.0 + np.exp(-value))
 
     def grad(self, data: Union[Point, RDD[Point]]):
         if isinstance(data, RDD):
@@ -48,11 +48,12 @@ class LogisticRegression(SGDModel):
             num_batches = data.count() // self.batch_size
             # Split the data into batches as RDDs
             batches = data.randomSplit([1.0 / num_batches] * num_batches)
-            for batch in batches:
+            for batch in batches:                
                 self.train_batch(batch)
 
         print("Training complete.")
 
     def train_batch(self, batch):
         grad = batch.map(self.grad).reduce(lambda x, y: (x[0] + y[0], x[1] + y[1]))
-        self.sgd.step({"W": grad[0] / self.batch_size, "b": grad[1] / self.batch_size})
+        official_batch_size = batch.count()
+        self.sgd.step({"W": grad[0] / official_batch_size, "b": grad[1] / official_batch_size})

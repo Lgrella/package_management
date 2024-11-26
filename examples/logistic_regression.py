@@ -19,7 +19,7 @@ data_rdd = preprocess_data(data)
 training_rdd, test_rdd = data_rdd.randomSplit([0.8, 0.2])
 
 # Initialize and train LogisticRegression model
-model = LogisticRegression(w_shape=(len(training_rdd.first().data),), batch_size = 10, b_shape=(1,), lr=0.01)
+model = LogisticRegression(w_shape=(len(training_rdd.first().data),), batch_size = 32, b_shape=(1,), lr=0.8)
 model.train(training_rdd, num_epochs=10)
 
 
